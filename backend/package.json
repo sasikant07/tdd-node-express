@@ -4,13 +4,16 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "start": "node --watch app",
+    "start": "node --watch index",
     "test": "jest --watch"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.19.2"
+    "bcrypt": "^5.1.1",
+    "express": "^4.19.2",
+    "sequelize": "^6.37.3",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "eslint": "^9.1.1",
@@ -44,4 +47,3 @@
     "singleQuote": false
   }
 }
-
