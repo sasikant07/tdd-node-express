@@ -45,4 +45,18 @@ const activate = async (token) => {
   await user.save();
 };
 
-module.exports = { save, findByEmail, activate };
+const getUsers = async () => {
+  const users = await User.findAll({
+    where: { inactive: false },
+    attributes: ["id", "username", "email"],
+    limit: 10,
+  });
+  return {
+    content: users,
+    page: 0,
+    size: 10,
+    totalPages: 0,
+  };
+};
+
+module.exports = { save, findByEmail, activate, getUsers };
