@@ -3,6 +3,8 @@ const router = express.Router();
 const { check, validationResult } = require("express-validator");
 const UserService = require("./UserService");
 const ValidationException = require("../error/ValidationException");
+const UserNotFoundException = require("./UserNotFoundException");
+const pagination = require("../middleware/pagination");
 
 router.post(
   "/api/1.0/users",
@@ -60,8 +62,18 @@ router.post("/api/1.0/users/token/:token", async (req, res, next) => {
   }
 });
 
-router.get("/api/1.0/users", async (req, res) => {
-  const users = await UserService.getUsers();
+router.get("/api/1.0/users", pagination, async (req, res) => {
+  const { page, size } = req.pagination;
+  const users = await UserService.getUsers(page, size);
   res.status(200).send(users);
+});
+
+router.get("/api/1.0/users/:id", async (req, res, next) => {
+  try {
+    const user = await UserService.getUser(req.params.id);
+    res.status(200).send(user);
+  } catch (error) {
+    next(error);
+  }
 });
 module.exports = router;
