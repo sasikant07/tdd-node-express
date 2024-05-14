@@ -3,8 +3,9 @@ const router = express.Router();
 const { check, validationResult } = require("express-validator");
 const UserService = require("./UserService");
 const ValidationException = require("../error/ValidationException");
-const UserNotFoundException = require("./UserNotFoundException");
 const pagination = require("../middleware/pagination");
+const ForbidenException = require("../error/ForbidenException");
+const basicAuthentication = require("../middleware/basicAuthentication");
 
 router.post(
   "/api/1.0/users",
@@ -62,11 +63,17 @@ router.post("/api/1.0/users/token/:token", async (req, res, next) => {
   }
 });
 
-router.get("/api/1.0/users", pagination, async (req, res) => {
-  const { page, size } = req.pagination;
-  const users = await UserService.getUsers(page, size);
-  res.status(200).send(users);
-});
+router.get(
+  "/api/1.0/users",
+  pagination,
+  basicAuthentication,
+  async (req, res) => {
+    const authenticatedUser = req.authenticatedUser;
+    const { page, size } = req.pagination;
+    const users = await UserService.getUsers(page, size, authenticatedUser);
+    res.status(200).send(users);
+  },
+);
 
 router.get("/api/1.0/users/:id", async (req, res, next) => {
   try {
@@ -76,4 +83,20 @@ router.get("/api/1.0/users/:id", async (req, res, next) => {
     next(error);
   }
 });
+
+router.put(
+  "/api/1.0/users/:id",
+  basicAuthentication,
+  async (req, res, next) => {
+    const authenticatedUser = req.authenticatedUser;
+
+    if (!authenticatedUser || authenticatedUser.id !== req.params.id) {
+      return next(new ForbidenException("unauthroized_user_update"));
+    }
+
+    await UserService.updateUser(req.params.id, req.body);
+    return res.status(200).send();
+  },
+);
+
 module.exports = router;

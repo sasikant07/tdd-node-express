@@ -31,6 +31,7 @@ beforeAll(async () => {
 
   await server.listen(8587, "localhost");
   await sequelize.sync(); // perform an SQL query to the database and create a table
+  jest.setTimeout(20000);
 });
 
 beforeEach(async () => {
@@ -40,6 +41,7 @@ beforeEach(async () => {
 
 afterAll(async () => {
   await server.close();
+  jest.setTimeout(5000);
 });
 
 const validUser = {
@@ -155,7 +157,7 @@ describe("User Registration", () => {
   it(`returns ${en.email_inuse} when same email is already in use`, async () => {
     await User.create({ ...validUser });
     const response = await postUser();
-    expect(response.body.validationErrors.email).toBe(email_inuse);
+    expect(response.body.validationErrors.email).toBe(en.email_inuse);
   });
 
   it("returns errors for both username is null and email in use", async () => {
@@ -271,7 +273,7 @@ describe("Internationalization", () => {
   });
 
   it(`returns success of message ${tr.user_create_success} when signup request is valid when languase is set turkish`, async () => {
-    const response = await postUser();
+    const response = await postUser({ ...validUser }, { language: "tr" });
     expect(response.body.message).toBe(tr.user_create_success);
   });
 

@@ -3,7 +3,7 @@ const router = express.Router();
 const bcrypt = require("bcrypt");
 const UserService = require("../user/UserService");
 const AuthenticationException = require("./AuthenticationException");
-const ForbiddenException = require("./ForbideenException");
+const ForbiddenException = require("../error/ForbidenException");
 const { check, validationResult } = require("express-validator");
 
 router.post(

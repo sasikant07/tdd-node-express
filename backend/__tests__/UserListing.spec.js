@@ -4,6 +4,7 @@ const User = require("../src/user/User");
 const sequelize = require("../src/config/database");
 const en = require("../locales/en/translation.json");
 const tr = require("../locales/tr/translation.json");
+const bcrypt = require("bcrypt");
 
 beforeAll(async () => {
   await sequelize.sync(); // perform an SQL query to the database and create a table
@@ -13,15 +14,22 @@ beforeEach(async () => {
   await User.destroy({ truncate: true });
 });
 
-const getUsers = () => {
-  return request(app).get("/api/1.0/users");
+const getUsers = (options = {}) => {
+  const agent = request(app).get("/api/1.0/users");
+  if (options.auth) {
+    const { email, password } = options.auth;
+    agent.auth(email, password);
+  }
+  return agent;
 };
 
 const addUsers = async (activeUserCount, inactiveUserCount = 0) => {
+  const hash = await bcrypt.hash("P@ssw0rd", 10);
   for (let i = 0; i < activeUserCount + inactiveUserCount; i++) {
     await User.create({
       username: `user${i + 1}`,
       email: `user${i + 1}@mail.com`,
+      password: hash,
       inactive: i >= activeUserCount,
     });
   }
@@ -109,6 +117,14 @@ describe("Listing Users", () => {
     const response = await getUsers().query({ size: "size", page: "page" });
     expect(response.body.size).toBe(10);
     expect(response.body.page).toBe(0);
+  });
+
+  it("returns user page without looged in user when request has valid authorization", async () => {
+    await addUsers(11);
+    const response = await getUsers({
+      auth: { email: "user1@mail.com", password: "P@ssw0rd" },
+    });
+    expect(response.body.totalPages).toBe(1);
   });
 });
 
