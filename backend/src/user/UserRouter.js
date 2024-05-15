@@ -5,7 +5,7 @@ const UserService = require("./UserService");
 const ValidationException = require("../error/ValidationException");
 const pagination = require("../middleware/pagination");
 const ForbidenException = require("../error/ForbidenException");
-const basicAuthentication = require("../middleware/basicAuthentication");
+const tokenAuthentication = require("../middleware/tokenAuthentication");
 
 router.post(
   "/api/1.0/users",
@@ -66,7 +66,7 @@ router.post("/api/1.0/users/token/:token", async (req, res, next) => {
 router.get(
   "/api/1.0/users",
   pagination,
-  basicAuthentication,
+  tokenAuthentication,
   async (req, res) => {
     const authenticatedUser = req.authenticatedUser;
     const { page, size } = req.pagination;
@@ -86,7 +86,7 @@ router.get("/api/1.0/users/:id", async (req, res, next) => {
 
 router.put(
   "/api/1.0/users/:id",
-  basicAuthentication,
+  tokenAuthentication,
   async (req, res, next) => {
     const authenticatedUser = req.authenticatedUser;
 

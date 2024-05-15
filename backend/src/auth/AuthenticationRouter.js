@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
+const TokenService = require("./TokenService");
 const UserService = require("../user/UserService");
 const AuthenticationException = require("./AuthenticationException");
 const ForbiddenException = require("../error/ForbidenException");
@@ -29,9 +30,12 @@ router.post(
       return next(new ForbiddenException());
     }
 
+    const token = TokenService.createToken(user);
+
     res.status(200).send({
       id: user.id,
       username: user.username,
+      token,
     });
   },
 );
