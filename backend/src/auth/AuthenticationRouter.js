@@ -30,7 +30,7 @@ router.post(
       return next(new ForbiddenException());
     }
 
-    const token = TokenService.createToken(user);
+    const token = await TokenService.createToken(user);
 
     res.status(200).send({
       id: user.id,
@@ -39,5 +39,14 @@ router.post(
     });
   },
 );
+
+router.post("/api/1.0/logout", async (req, res) => {
+  const authorization = req.headers.authorization;
+  if (authorization) {
+    const token = authorization.substring(7);
+    await TokenService.deleteToken(token);
+  }
+  res.status(200).send();
+});
 
 module.exports = router;

@@ -1,6 +1,5 @@
 const Sequelize = require("sequelize");
 const sequelize = require("../config/database");
-const { type } = require("os");
 
 const Model = Sequelize.Model;
 
