@@ -1,5 +1,6 @@
 const Sequelize = require("sequelize");
 const sequelize = require("../config/database");
+const Token = require("../auth/Token");
 
 const Model = Sequelize.Model;
 
@@ -29,5 +30,8 @@ User.init(
     modelName: "user",
   },
 );
+
+// Relationships
+User.hasMany(Token, { onDelete: "cascade", foreignKey: "userId" });
 
 module.exports = User;
