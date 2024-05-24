@@ -62,16 +62,12 @@ router.post("/api/1.0/users/token/:token", async (req, res, next) => {
   }
 });
 
-router.get(
-  "/api/1.0/users",
-  pagination,
-  async (req, res) => {
-    const authenticatedUser = req.authenticatedUser;
-    const { page, size } = req.pagination;
-    const users = await UserService.getUsers(page, size, authenticatedUser);
-    res.status(200).send(users);
-  },
-);
+router.get("/api/1.0/users", pagination, async (req, res) => {
+  const authenticatedUser = req.authenticatedUser;
+  const { page, size } = req.pagination;
+  const users = await UserService.getUsers(page, size, authenticatedUser);
+  res.status(200).send(users);
+});
 
 router.get("/api/1.0/users/:id", async (req, res, next) => {
   try {
@@ -82,31 +78,44 @@ router.get("/api/1.0/users/:id", async (req, res, next) => {
   }
 });
 
-router.put(
-  "/api/1.0/users/:id",
+router.put("/api/1.0/users/:id", async (req, res, next) => {
+  const authenticatedUser = req.authenticatedUser;
+
+  if (!authenticatedUser || authenticatedUser.id !== req.params.id) {
+    return next(new ForbidenException("unauthroized_user_update"));
+  }
+
+  await UserService.updateUser(req.params.id, req.body);
+  return res.status(200).send();
+});
+
+router.delete("/api/1.0/users/:id", async (req, res, next) => {
+  const authenticatedUser = req.authenticatedUser;
+
+  if (!authenticatedUser || authenticatedUser.id !== req.params.id) {
+    return next(new ForbidenException("unauthroized_user_delete"));
+  }
+  await UserService.deleteUser(req.params.id);
+
+  return res.send();
+});
+
+router.post(
+  "/api/1.0/password-reset",
+  check("email").isEmail().withMessage("email_invalid"),
   async (req, res, next) => {
-    const authenticatedUser = req.authenticatedUser;
-
-    if (!authenticatedUser || authenticatedUser.id !== req.params.id) {
-      return next(new ForbidenException("unauthroized_user_update"));
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(new ValidationException(errors.array()));
     }
-
-    await UserService.updateUser(req.params.id, req.body);
-    return res.status(200).send();
-  },
-);
-
-router.delete(
-  "/api/1.0/users/:id",
-  async (req, res, next) => {
-    const authenticatedUser = req.authenticatedUser;
-
-    if (!authenticatedUser || authenticatedUser.id !== req.params.id) {
-      return next(new ForbidenException("unauthroized_user_delete"));
+    try {
+      await UserService.passwordResetRequest(req.body.email);
+      return res
+        .status(200)
+        .send({ message: req.t("password_reset_request_success") });
+    } catch (error) {
+      next(error);
     }
-    await UserService.deleteUser(req.params.id);
-
-    return res.send();
   },
 );
 
