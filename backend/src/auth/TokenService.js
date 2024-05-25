@@ -52,4 +52,14 @@ const scheduleCleanup = () => {
   );
 };
 
-module.exports = { createToken, verify, deleteToken, scheduleCleanup };
+const clearTokens = async (userId) => {
+  await Token.destroy({ where: { userId: userId } });
+};
+
+module.exports = {
+  createToken,
+  verify,
+  deleteToken,
+  scheduleCleanup,
+  clearTokens,
+};

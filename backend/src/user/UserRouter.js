@@ -5,6 +5,7 @@ const UserService = require("./UserService");
 const ValidationException = require("../error/ValidationException");
 const pagination = require("../middleware/pagination");
 const ForbidenException = require("../error/ForbidenException");
+const passwordResetTokenValidator = require("../middleware/passwordResetTokenValidator");
 
 router.post(
   "/api/1.0/users",
@@ -101,7 +102,7 @@ router.delete("/api/1.0/users/:id", async (req, res, next) => {
 });
 
 router.post(
-  "/api/1.0/password-reset",
+  "/api/1.0/user/password",
   check("email").isEmail().withMessage("email_invalid"),
   async (req, res, next) => {
     const errors = validationResult(req);
@@ -116,6 +117,29 @@ router.post(
     } catch (error) {
       next(error);
     }
+  },
+);
+
+router.put(
+  "/api/1.0/user/password",
+  passwordResetTokenValidator,
+  check("password")
+    .notEmpty()
+    .withMessage("password_null")
+    .bail()
+    .isLength({ min: 6 })
+    .withMessage("password_size")
+    .bail()
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/)
+    .withMessage("password_pattern"),
+  async (req, res, next) => {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      return next(new ValidationException(errors.array()));
+    }
+    await UserService.updatePassword(req.body);
+    res.send();
   },
 );
 

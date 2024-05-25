@@ -5,6 +5,7 @@ const User = require("../src/user/User");
 const sequelize = require("../src/config/database");
 const en = require("../locales/en/translation.json");
 const tr = require("../locales/tr/translation.json");
+const config = require("config");
 
 let lastMail, server;
 let simulateSmtpFailure = false;
@@ -29,7 +30,7 @@ beforeAll(async () => {
     },
   });
 
-  await server.listen(8587, "localhost");
+  await server.listen(config.mail.port, "localhost");
   await sequelize.sync(); // perform an SQL query to the database and create a table
   jest.setTimeout(20000);
 });
