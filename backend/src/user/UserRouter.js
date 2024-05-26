@@ -86,8 +86,8 @@ router.put("/api/1.0/users/:id", async (req, res, next) => {
     return next(new ForbidenException("unauthroized_user_update"));
   }
 
-  await UserService.updateUser(req.params.id, req.body);
-  return res.status(200).send();
+  const user = await UserService.updateUser(req.params.id, req.body);
+  return res.status(200).send(user);
 });
 
 router.delete("/api/1.0/users/:id", async (req, res, next) => {

@@ -35,6 +35,7 @@ router.post(
     res.status(200).send({
       id: user.id,
       username: user.username,
+      image: user.image,
       token,
     });
   },
