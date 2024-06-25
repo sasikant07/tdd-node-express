@@ -20,13 +20,6 @@ beforeEach(async () => {
   await User.destroy({ truncate: { cascade: true } });
 });
 
-afterAll(() => {
-  const files = fs.readdirSync(profileDirectory);
-  for (const file of files) {
-    fs.unlinkSync(path.join(profileDirectory, file));
-  }
-});
-
 const putUser = async (id = 5, body = null, options = {}) => {
   let agent = request(app);
 

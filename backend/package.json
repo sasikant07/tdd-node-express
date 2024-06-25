@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "start": "cross-env NODE_ENV=development node --watch index",
-    "test": "cross-env NODE_ENV=test jest --watch"
+    "test": "cross-env NODE_ENV=test jest --watch",
+    "posttest": "cross-env NODE_ENV=test node test-cleanup"
   },
   "author": "",
   "license": "ISC",
