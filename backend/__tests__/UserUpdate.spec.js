@@ -185,4 +185,45 @@ describe("User Update", () => {
     const profileImagePath = path.join(profileDirectory, inDBUser.image);
     expect(fs.existsSync(profileImagePath)).toBe(true);
   });
+
+  it("removes teh old image after user upload new one", async () => {
+    const fileInBase64 = readFileasBase64();
+    const savedUser = await addUser();
+    const validUpdate = { username: "user1-updated", image: fileInBase64 };
+    const response = await putUser(savedUser.id, validUpdate, {
+      auth: { email: savedUser.email, password: "P@ssw0rd" },
+    });
+
+    const firstimage = response.body.image;
+
+    await putUser(savedUser.id, validUpdate, {
+      auth: { email: savedUser.email, password: "P@ssw0rd" },
+    });
+
+    const profileImagePath = path.join(profileDirectory, firstimage);
+    expect(fs.existsSync(profileImagePath)).toBe(false);
+  });
+
+  it.each`
+    language | value             | message
+    ${"en"}  | ${null}           | ${en.username_null}
+    ${"en"}  | ${"usr"}          | ${en.username_size}
+    ${"en"}  | ${"a".repeat(33)} | ${en.username_size}
+    ${"tr"}  | ${null}           | ${tr.username_null}
+    ${"tr"}  | ${"usr"}          | ${tr.username_size}
+    ${"tr"}  | ${"a".repeat(33)} | ${tr.username_size}
+  `(
+    "returns bad request with $message username is updated with $value when language is set as $language",
+    async ({ language, value, message }) => {
+      const savedUser = await addUser();
+      const invalidUpdate = { username: value };
+      const response = await putUser(savedUser.id, invalidUpdate, {
+        auth: { email: savedUser.email, password: "P@ssw0rd" },
+        language: language,
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.body.validationErrors.username).toBe(message);
+    },
+  );
 });
