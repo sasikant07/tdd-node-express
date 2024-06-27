@@ -56,8 +56,8 @@ const addUser = async (user = { ...activeUser }) => {
   return await User.create(user);
 };
 
-const readFileasBase64 = () => {
-  const filepath = path.join(".", "__tests__", "resources", "test-png.png");
+const readFileasBase64 = (file = "test-png.png") => {
+  const filepath = path.join(".", "__tests__", "resources", file);
   return fs.readFileSync(filepath, { encoding: "base64" });
 };
 
@@ -224,6 +224,122 @@ describe("User Update", () => {
 
       expect(response.status).toBe(400);
       expect(response.body.validationErrors.username).toBe(message);
+    },
+  );
+
+  it("returns 200 when image size is exactly 2mb", async () => {
+    const testPng = readFileasBase64();
+    const pngByte = Buffer.from(testPng, "base64").length;
+    const twoMB = 1024 * 1024 * 2;
+    const fileWithSize2MB = "a".repeat(twoMB - pngByte);
+    const fillbase64 = Buffer.from(fileWithSize2MB).toString("base64");
+    const savedUser = await addUser();
+    const validUpdate = {
+      username: "updated-user",
+      image: testPng + fillbase64,
+    };
+    const response = await putUser(savedUser.id, validUpdate, {
+      auth: { email: savedUser.email, password: "P@ssw0rd" },
+    });
+    expect(response.status).toBe(200);
+  });
+
+  it("returns 400 when image size exceed 2mb", async () => {
+    const fileWithSizeExceeding2MB = "a".repeat(1024 * 1024 * 2) + "a";
+    const base64 = Buffer.from(fileWithSizeExceeding2MB).toString("base64");
+    const savedUser = await addUser();
+    const invalidUpdate = { username: "updated-user", image: base64 };
+    const response = await putUser(savedUser.id, invalidUpdate, {
+      auth: { email: savedUser.email, password: "P@ssw0rd" },
+    });
+    expect(response.status).toBe(400);
+  });
+
+  it("keeps the old image after user only updates username", async () => {
+    const fileInBase64 = readFileasBase64();
+    const savedUser = await addUser();
+    const validUpdate = { username: "user1-updated", image: fileInBase64 };
+    const response = await putUser(savedUser.id, validUpdate, {
+      auth: { email: savedUser.email, password: "P@ssw0rd" },
+    });
+
+    const firstimage = response.body.image;
+
+    await putUser(
+      savedUser.id,
+      { username: "user1-updated2" },
+      {
+        auth: { email: savedUser.email, password: "P@ssw0rd" },
+      },
+    );
+
+    const profileImagePath = path.join(profileDirectory, firstimage);
+    expect(fs.existsSync(profileImagePath)).toBe(true);
+
+    const userInDb = await User.findOne({ where: { id: savedUser.id } });
+    expect(userInDb.image).toBe(firstimage);
+  });
+
+  it.each`
+    language | message
+    ${"tr"}  | ${tr.profile_image_size}
+    ${"en"}  | ${en.profile_image_size}
+  `(
+    "return $message when file size exceeds 2mb when language is $language",
+    async ({ language, message }) => {
+      const fileWithSizeExceeding2MB = "a".repeat(1024 * 1024 * 2) + "a";
+      const base64 = Buffer.from(fileWithSizeExceeding2MB).toString("base64");
+      const savedUser = await addUser();
+      const invalidUpdate = { username: "updated-user", image: base64 };
+      const response = await putUser(savedUser.id, invalidUpdate, {
+        auth: { email: savedUser.email, password: "P@ssw0rd" },
+        language,
+      });
+      expect(response.body.validationErrors.image).toBe(message);
+    },
+  );
+
+  it.each`
+    file              | status
+    ${"test-gif.gif"} | ${400}
+    ${"test-pdf.pdf"} | ${400}
+    ${"test-txt.txt"} | ${400}
+    ${"test-png.png"} | ${200}
+    ${"test-jpg.jpg"} | ${200}
+  `(
+    "return $status when uploading $file as image",
+    async ({ file, status }) => {
+      const fileInBase64 = readFileasBase64(file);
+      const savedUser = await addUser();
+      const updateBody = { username: "user1-updated", image: fileInBase64 };
+      const response = await putUser(savedUser.id, updateBody, {
+        auth: { email: savedUser.email, password: "P@ssw0rd" },
+      });
+
+      expect(response.status).toBe(status);
+    },
+  );
+
+  it.each`
+    file              | language | message
+    ${"test-gif.gif"} | ${"tr"}  | ${tr.unsupported_image_file}
+    ${"test-gif.gif"} | ${"en"}  | ${en.unsupported_image_file}
+    ${"test-pdf.pdf"} | ${"tr"}  | ${tr.unsupported_image_file}
+    ${"test-pdf.pdf"} | ${"en"}  | ${en.unsupported_image_file}
+    ${"test-txt.txt"} | ${"tr"}  | ${tr.unsupported_image_file}
+    ${"test-txt.txt"} | ${"en"}  | ${en.unsupported_image_file}
+  `(
+    "returns $message when uploading $file as image when laguage is $language",
+    async ({ file, language, message }) => {
+      const fileInBase64 = readFileasBase64(file);
+      const savedUser = await addUser();
+      const updateBody = { username: "user1-updated", image: fileInBase64 };
+      const response = await putUser(savedUser.id, updateBody, {
+        auth: { email: savedUser.email, password: "P@ssw0rd" },
+        language,
+      });
+
+      expect(response.body.validationErrors.image).toBe(message);
     },
   );
 });

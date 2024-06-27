@@ -15,6 +15,7 @@
     "config": "^3.3.11",
     "express": "^4.19.2",
     "express-validator": "^7.0.1",
+    "file-type": "^16.5.3",
     "i18next": "^23.11.2",
     "i18next-fs-backend": "^2.3.1",
     "i18next-http-middleware": "^3.5.0",

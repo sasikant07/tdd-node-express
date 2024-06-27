@@ -6,6 +6,7 @@ const ValidationException = require("../error/ValidationException");
 const pagination = require("../middleware/pagination");
 const ForbidenException = require("../error/ForbidenException");
 const passwordResetTokenValidator = require("../middleware/passwordResetTokenValidator");
+const FileService = require("../file/FileService");
 
 router.post(
   "/api/1.0/users",
@@ -87,6 +88,22 @@ router.put(
     .bail()
     .isLength({ min: 4, max: 32 })
     .withMessage("username_size"),
+  check("image").custom(async (imageAsBase64String) => {
+    const buffer = Buffer.from(imageAsBase64String, "base64");
+    if (!imageAsBase64String) {
+      return true;
+    }
+    if (!FileService.isLessThan2MB(buffer)) {
+      throw new Error("profile_image_size");
+    }
+
+    const supportedType = await FileService.isSupportedFileType(buffer);
+
+    if (!supportedType) {
+      throw new Error("unsupported_image_file");
+    }
+    return true;
+  }),
   async (req, res, next) => {
     const authenticatedUser = req.authenticatedUser;
 
